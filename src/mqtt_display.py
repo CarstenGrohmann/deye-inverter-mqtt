@@ -49,29 +49,34 @@ def on_message(client, userdata, msg):
     try:
         topic_parts = msg.topic.split('/')
         if len(topic_parts) >= 3 and topic_parts[-3] == 'timeofuse':
-            object_param = topic_parts[-2]
-            object_number = int(topic_parts[-1])
-            value = msg.payload.decode()
-
-            with data_lock:
-                if object_number in data_store:
-                    # Attempt to convert to appropriate type
-                    if object_param in ['power', 'soc', 'voltage']:
-                        value = int(float(value))
-                    elif object_param == 'enabled':
-                        value = bool(int(float(value))) # Assuming '0' or '1' for boolean
-                    # 'time' can remain a string or be parsed into a datetime object if needed
-
-                    data_store[object_number][object_param] = value
-                    last_update_time = datetime.now()
-                else:
-                    print(f"Received data for unknown object number: {object_number}")
+            process_timeofuse(msg, topic_parts)
         else:
             print(f"Received message on unexpected topic: {msg.topic}")
 
     except Exception as e:
         print(f"Error processing message: {e}")
         print(f"Topic: {msg.topic}, Payload: {msg.payload.decode()}")
+
+
+def process_timeofuse(msg, topic_parts: list):
+    global last_update_time
+    object_param = topic_parts[-2]
+    object_number = int(topic_parts[-1])
+    value = msg.payload.decode()
+    with data_lock:
+        if object_number in data_store:
+            # Attempt to convert to appropriate type
+            if object_param in ['power', 'soc', 'voltage', 'time']:
+                value = int(float(value))
+            elif object_param == 'enabled':
+                value = bool(int(float(value)))  # Assuming '0' or '1' for boolean
+            # 'time' can remain a string or be parsed into a datetime object if needed
+
+            data_store[object_number][object_param] = value
+            last_update_time = datetime.now()
+        else:
+            print(f"Received data for unknown object number: {object_number}")
+
 
 def display_table():
     while True:
