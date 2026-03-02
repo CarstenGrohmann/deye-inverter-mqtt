@@ -10,7 +10,7 @@ from colorama import Fore, Style, init
 
 # Load environment variables from config.env
 # C:/Users/kalev/projects/akuu-energy-v3/backend-python/deye-inverter-mqtt/src/
-load_dotenv(dotenv_path='config.env')
+load_dotenv("config.env", override=False)
 
 MQTT_HOST = os.getenv('MQTT_HOST')
 MQTT_PORT = int(os.getenv('MQTT_PORT', 1883))
@@ -43,6 +43,21 @@ general_metrics_store = {
     'settings/workmode': {'current': None, 'previous': None},
     'settings/solar_sell': {'current': None, 'previous': None},
 }
+
+# Mapping for friendly names of general metrics
+METRIC_NAME_MAPPING = {
+    'battery/power': 'Battery Power',
+    'battery/soc': 'Battery SoC',
+    'ac/total_power': 'Gdir consumprion Power ',
+    'ac/ups/total_power': 'UPS Load Power',
+    'settings/battery/maximum_charge_current': 'Max Charge Current',
+    'settings/battery/maximum_discharge_current': 'Max Discharge Current',
+    'settings/battery/maximum_grid_charge_current': 'Max Grid Charge Current',
+    'settings/battery/grid_charge': 'Grid Charge Enabled',
+    'settings/workmode': 'Work Mode',
+    'settings/solar_sell': 'Solar Sell Enabled',
+}
+
 last_update_time = None
 data_lock = threading.Lock()
 
@@ -178,7 +193,10 @@ def display_table():
             for key in sorted(general_metrics_store.keys()):
                 metric_data = general_metrics_store[key]
                 colored_value = colorize_value(metric_data['current'], metric_data['previous'])
-                general_metrics_table.add_row([key, colored_value])
+                friendly_name = METRIC_NAME_MAPPING.get(key)
+                if not friendly_name:  # fallback just in case
+                    friendly_name = key
+                general_metrics_table.add_row([friendly_name, colored_value])
             print(general_metrics_table)
             print("\n" + "="*50 + "\n") # Separator
 

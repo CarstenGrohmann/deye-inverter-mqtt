@@ -11,6 +11,13 @@
     "request": "launch",
   },
   {
+    "label": "Display Inverter Status",
+    "adapter": "Debugpy",
+    "program": "mqtt_display.py",
+    "cwd": "$ZED_WORKTREE_ROOT/src",
+    "request": "launch",
+  },
+  {
     "label": "Python Active File",
     "adapter": "Debugpy",
     "program": "$ZED_FILE",
