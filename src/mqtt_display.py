@@ -28,6 +28,19 @@ MQTT_TOPIC_PREFIX = os.getenv('MQTT_TOPIC_PREFIX')
 #   ...
 # }
 data_store = {i: {'time': None, 'power': None, 'soc': None, 'enabled': None, 'voltage': None} for i in range(1, 7)}
+# Data structure to hold general metrics
+general_metrics_store = {
+    'battery/power': None,
+    'battery/soc': None,
+    'ac/total_power': None,
+    'ac/ups/total_power': None,
+    'settings/battery/maximum_charge_current': None,
+    'settings/battery/maximum_discharge_current': None,
+    'settings/battery/maximum_grid_charge_current': None,
+    'settings/battery/grid_charge': None,
+    'settings/workmode': None,
+    'settings/solar_sell': None,
+}
 last_update_time = None
 data_lock = threading.Lock()
 
@@ -41,6 +54,24 @@ def on_connect(client, userdata, flags, rc):
                 topic = f"{base_topic}/{param}/{obj_num}"
                 client.subscribe(topic)
                 print(f"Subscribed to {topic}")
+
+        # Subscribe to general metrics topics
+        general_topics = [
+            'battery/power',
+            'battery/soc',
+            'ac/total_power',
+            'ac/ups/total_power',
+            'settings/battery/maximum_charge_current',
+            'settings/battery/maximum_discharge_current',
+            'settings/battery/maximum_grid_charge_current',
+            'settings/battery/grid_charge',
+            'settings/workmode',
+            'settings/solar_sell',
+        ]
+        for gt in general_topics:
+            topic = f"{MQTT_TOPIC_PREFIX}/{gt}"
+            client.subscribe(topic)
+            print(f"Subscribed to {topic}")
     else:
         print(f"Failed to connect, return code {rc}")
 
@@ -49,7 +80,14 @@ def on_message(client, userdata, msg):
     try:
         topic_parts = msg.topic.split('/')
         if len(topic_parts) >= 3 and topic_parts[-3] == 'timeofuse':
-            process_timeofuse(msg, topic_parts)
+            process_timeofuse(topic_parts, msg.payload.decode())
+        elif msg.topic.startswith(f"{MQTT_TOPIC_PREFIX}/"):
+            # Check for general metrics
+            suffix = msg.topic[len(f"{MQTT_TOPIC_PREFIX}/"):]
+            if suffix in general_metrics_store:
+                process_general_metric(suffix, msg.payload.decode())
+            else:
+                print(f"Received message on unhandled topic: {msg.topic}")
         else:
             print(f"Received message on unexpected topic: {msg.topic}")
 
@@ -58,24 +96,51 @@ def on_message(client, userdata, msg):
         print(f"Topic: {msg.topic}, Payload: {msg.payload.decode()}")
 
 
-def process_timeofuse(msg, topic_parts: list):
+def process_timeofuse(topic_parts: list, payload: str):
     global last_update_time
     object_param = topic_parts[-2]
     object_number = int(topic_parts[-1])
-    value = msg.payload.decode()
+    value = payload
     with data_lock:
         if object_number in data_store:
             # Attempt to convert to appropriate type
             if object_param in ['power', 'soc', 'voltage', 'time']:
-                value = int(float(value))
+                try:
+                    value = int(float(value))
+                except ValueError:
+                    value = value # keep as string if conversion fails
             elif object_param == 'enabled':
-                value = bool(int(float(value)))  # Assuming '0' or '1' for boolean
-            # 'time' can remain a string or be parsed into a datetime object if needed
+                try:
+                    value = bool(int(float(value)))  # Assuming '0' or '1' for boolean
+                except ValueError:
+                    value = value # keep as string if conversion fails
 
             data_store[object_number][object_param] = value
             last_update_time = datetime.now()
         else:
             print(f"Received data for unknown object number: {object_number}")
+
+def process_general_metric(metric_key, value_str):
+    global last_update_time
+    with data_lock:
+        try:
+            # Attempt to convert to appropriate type
+            if metric_key in ['battery/power', 'battery/soc', 'ac/total_power', 'ac/ups/total_power',
+                             'settings/battery/maximum_charge_current', 'settings/battery/maximum_discharge_current',
+                             'settings/battery/maximum_grid_charge_current']:
+                value = float(value_str)
+            elif metric_key in ['settings/battery/grid_charge', 'settings/solar_sell']:
+                value = bool(int(float(value_str))) # Assuming '0' or '1'
+            elif metric_key == 'settings/workmode':
+                value = value_str # Keep as string
+            else:
+                value = value_str # Default to string for unknown types
+
+            general_metrics_store[metric_key] = value
+            last_update_time = datetime.now()
+        except ValueError:
+            print(f"Could not convert value '{value_str}' for metric '{metric_key}'. Keeping as string.")
+            general_metrics_store[metric_key] = value_str
 
 
 def display_table():
@@ -85,6 +150,16 @@ def display_table():
         table.field_names = ["Object Number", "Time", "Power", "SoC", "Enabled", "Voltage"]
 
         with data_lock:
+            print("General Metrics:")
+            general_metrics_table = PrettyTable()
+            general_metrics_table.field_names = ["Metric", "Value"]
+            for key in sorted(general_metrics_store.keys()):
+                value = general_metrics_store[key]
+                general_metrics_table.add_row([key, value if value is not None else 'N/A'])
+            print(general_metrics_table)
+            print("\n" + "="*50 + "\n") # Separator
+
+            print("Time of Use Objects Data")
             for obj_num in sorted(data_store.keys()):
                 obj_data = data_store[obj_num]
                 table.add_row([
@@ -96,7 +171,6 @@ def display_table():
                     obj_data['voltage'] if obj_data['voltage'] is not None else 'wait'
                 ])
 
-            print("Time of Use Objects Data")
             print(table)
             if last_update_time:
                 print(f"\nLast Updated: {last_update_time.strftime('%Y-%m-%d %H:%M:%S')}")
