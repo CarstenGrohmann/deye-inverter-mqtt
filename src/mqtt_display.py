@@ -6,9 +6,11 @@ from datetime import datetime
 #import json
 import threading
 import time
+from colorama import Fore, Style, init
 
 # Load environment variables from config.env
-load_dotenv(dotenv_path='C:/Users/kalev/projects/akuu-energy-v3/backend-python/deye-inverter-mqtt/src/config.env')
+# C:/Users/kalev/projects/akuu-energy-v3/backend-python/deye-inverter-mqtt/src/
+load_dotenv(dotenv_path='config.env')
 
 MQTT_HOST = os.getenv('MQTT_HOST')
 MQTT_PORT = int(os.getenv('MQTT_PORT', 1883))
@@ -25,21 +27,21 @@ MQTT_TOPIC_PREFIX = os.getenv('MQTT_TOPIC_PREFIX')
 #     'enabled': value,
 #     'voltage': value
 #   },
-#   ...
+#   ...\
 # }
-data_store = {i: {'time': None, 'power': None, 'soc': None, 'enabled': None, 'voltage': None} for i in range(1, 7)}
+data_store = {i: {param: {'current': None, 'previous': None} for param in ['time', 'power', 'soc', 'enabled', 'voltage']} for i in range(1, 7)}
 # Data structure to hold general metrics
 general_metrics_store = {
-    'battery/power': None,
-    'battery/soc': None,
-    'ac/total_power': None,
-    'ac/ups/total_power': None,
-    'settings/battery/maximum_charge_current': None,
-    'settings/battery/maximum_discharge_current': None,
-    'settings/battery/maximum_grid_charge_current': None,
-    'settings/battery/grid_charge': None,
-    'settings/workmode': None,
-    'settings/solar_sell': None,
+    'battery/power': {'current': None, 'previous': None},
+    'battery/soc': {'current': None, 'previous': None},
+    'ac/total_power': {'current': None, 'previous': None},
+    'ac/ups/total_power': {'current': None, 'previous': None},
+    'settings/battery/maximum_charge_current': {'current': None, 'previous': None},
+    'settings/battery/maximum_discharge_current': {'current': None, 'previous': None},
+    'settings/battery/maximum_grid_charge_current': {'current': None, 'previous': None},
+    'settings/battery/grid_charge': {'current': None, 'previous': None},
+    'settings/workmode': {'current': None, 'previous': None},
+    'settings/solar_sell': {'current': None, 'previous': None},
 }
 last_update_time = None
 data_lock = threading.Lock()
@@ -112,10 +114,13 @@ def process_timeofuse(topic_parts: list, payload: str):
             elif object_param == 'enabled':
                 try:
                     value = bool(int(float(value)))  # Assuming '0' or '1' for boolean
-                except ValueError:
+                except ValueError:\
                     value = value # keep as string if conversion fails
 
-            data_store[object_number][object_param] = value
+            # Update historic data
+            current_param_data = data_store[object_number][object_param]
+            current_param_data['previous'] = current_param_data['current']
+            current_param_data['current'] = value
             last_update_time = datetime.now()
         else:
             print(f"Received data for unknown object number: {object_number}")
@@ -136,12 +141,29 @@ def process_general_metric(metric_key, value_str):
             else:
                 value = value_str # Default to string for unknown types
 
-            general_metrics_store[metric_key] = value
+            # Update historic data
+            current_metric_data = general_metrics_store[metric_key]
+            current_metric_data['previous'] = current_metric_data['current']
+            current_metric_data['current'] = value
             last_update_time = datetime.now()
         except ValueError:
             print(f"Could not convert value '{value_str}' for metric '{metric_key}'. Keeping as string.")
-            general_metrics_store[metric_key] = value_str
+            general_metrics_store[metric_key]['previous'] = general_metrics_store[metric_key]['current']
+            general_metrics_store[metric_key]['current'] = value_str
 
+
+def colorize_value(current_value, previous_value):
+    if current_value is None:
+        return 'N/A'
+    if previous_value is None or not isinstance(current_value, (int, float)) or not isinstance(previous_value, (int, float)):
+        return str(current_value)
+
+    if current_value > previous_value:
+        return f"{Fore.GREEN}{current_value}{Style.RESET_ALL}"
+    elif current_value < previous_value:
+        return f"{Fore.RED}{current_value}{Style.RESET_ALL}"
+    else:
+        return str(current_value)
 
 def display_table():
     while True:
@@ -154,21 +176,22 @@ def display_table():
             general_metrics_table = PrettyTable()
             general_metrics_table.field_names = ["Metric", "Value"]
             for key in sorted(general_metrics_store.keys()):
-                value = general_metrics_store[key]
-                general_metrics_table.add_row([key, value if value is not None else 'N/A'])
+                metric_data = general_metrics_store[key]
+                colored_value = colorize_value(metric_data['current'], metric_data['previous'])
+                general_metrics_table.add_row([key, colored_value])
             print(general_metrics_table)
             print("\n" + "="*50 + "\n") # Separator
 
             print("Time of Use Objects Data")
             for obj_num in sorted(data_store.keys()):
                 obj_data = data_store[obj_num]
-                table.add_row([
-                    obj_num,
-                    obj_data['time'] if obj_data['time'] is not None else 'wait',
-                    obj_data['power'] if obj_data['power'] is not None else 'wait',
-                    obj_data['soc'] if obj_data['soc'] is not None else 'wait',
-                    obj_data['enabled'] if obj_data['enabled'] is not None else 'wait',
-                    obj_data['voltage'] if obj_data['voltage'] is not None else 'wait'
+                table.add_row([\
+                    obj_num,\
+                    colorize_value(obj_data['time']['current'], obj_data['time']['previous']),\
+                    colorize_value(obj_data['power']['current'], obj_data['power']['previous']),\
+                    colorize_value(obj_data['soc']['current'], obj_data['soc']['previous']),\
+                    colorize_value(obj_data['enabled']['current'], obj_data['enabled']['previous']),\
+                    colorize_value(obj_data['voltage']['current'], obj_data['voltage']['previous'])\
                 ])
 
             print(table)
@@ -186,6 +209,7 @@ def main():
     client.on_connect = on_connect
     client.on_message = on_message
 
+    init() # Initialize Colorama
     try:
         client.connect(MQTT_HOST, MQTT_PORT, 60)
     except Exception as e:
