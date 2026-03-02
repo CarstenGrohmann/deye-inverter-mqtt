@@ -1,3 +1,13 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "colorama",
+#     "paho-mqtt",
+#     "prettytable",
+#     "python-dotenv",
+# ]
+# ///
+
 import os
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
@@ -6,11 +16,13 @@ from datetime import datetime
 #import json
 import threading
 import time
+from pathlib import Path
 from colorama import Fore, Style, init
 
 # Load environment variables from config.env
 # C:/Users/kalev/projects/akuu-energy-v3/backend-python/deye-inverter-mqtt/src/
-load_dotenv("config.env", override=False)
+script_dir = Path(__file__).parent
+load_dotenv(script_dir / "config.env", override=False)
 
 MQTT_HOST = os.getenv('MQTT_HOST')
 MQTT_PORT = int(os.getenv('MQTT_PORT', 1883))
@@ -48,7 +60,7 @@ general_metrics_store = {
 METRIC_NAME_MAPPING = {
     'battery/power': 'Battery Power',
     'battery/soc': 'Battery SoC',
-    'ac/total_power': 'Gdir consumprion Power ',
+    'ac/total_power': 'Grid Consumption Power',
     'ac/ups/total_power': 'UPS Load Power',
     'settings/battery/maximum_charge_current': 'Max Charge Current',
     'settings/battery/maximum_discharge_current': 'Max Discharge Current',
@@ -61,7 +73,7 @@ METRIC_NAME_MAPPING = {
 last_update_time = None
 data_lock = threading.Lock()
 
-def on_connect(client, userdata, flags, rc):
+def on_connect(client, userdata, flags, rc, properties=None):
     print(f"Connected with result code {rc}")
     if rc == 0:
         base_topic = f"{MQTT_TOPIC_PREFIX}/timeofuse"
@@ -129,7 +141,7 @@ def process_timeofuse(topic_parts: list, payload: str):
             elif object_param == 'enabled':
                 try:
                     value = bool(int(float(value)))  # Assuming '0' or '1' for boolean
-                except ValueError:\
+                except ValueError:
                     value = value # keep as string if conversion fails
 
             # Update historic data
@@ -221,7 +233,7 @@ def display_table():
         time.sleep(1) # Refresh every 1 second
 
 def main():
-    client = mqtt.Client()
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     if MQTT_USERNAME and MQTT_PASSWORD:
         client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
     client.on_connect = on_connect
