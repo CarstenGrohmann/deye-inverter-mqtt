@@ -37,7 +37,7 @@ class DeyeBatterySettingsEventProcessor(DeyeEventProcessor):
         self.__logger_config = logger_config
         self.__mqtt_client = mqtt_client
         self.__modbus = modbus
-        self.__battery_settings_topic_suffix = "settings/battery"   # here is one extra segments for specific setting
+        self.__battery_settings_topic_suffix = "settings/battery"  # here is one extra segments for specific setting
         self.__sensors = sensors
         self.__battery_settings_sensor_reg_addresses_dict = {}
 
@@ -48,7 +48,9 @@ class DeyeBatterySettingsEventProcessor(DeyeEventProcessor):
         return "Change Battery settings over MQTT"
 
     def initialize(self):
-        matching_sensors = [s for s in self.__sensors if s.mqtt_topic_suffix.startswith(self.__battery_settings_topic_suffix)]
+        matching_sensors = [
+            s for s in self.__sensors if s.mqtt_topic_suffix.startswith(self.__battery_settings_topic_suffix)
+        ]
         if not matching_sensors:
             self.__log.warning("BatterySettings sensors not found. Enable appropriate settings metric group.")
             return
