@@ -229,6 +229,7 @@ class DeyeConfig:
         log_stream=LOG_DEST_STDOUT,
         data_read_inverval=60,
         set_time_interval=300,
+        set_time_timezone: str = "UTC",
         publish_on_change=False,
         event_expiry=360,
         metric_groups: [str] = [],
@@ -246,6 +247,7 @@ class DeyeConfig:
         self.log_stream = log_stream
         self.data_read_inverval = data_read_inverval
         self.set_time_interval = set_time_interval
+        self.set_time_timezone = set_time_timezone
         self.publish_on_change = publish_on_change
         self.event_expiry = event_expiry
         self.metric_groups = metric_groups
@@ -272,6 +274,7 @@ class DeyeConfig:
                 log_stream=DeyeEnv.string("LOG_STREAM", LOG_DEST_STDOUT),
                 data_read_inverval=DeyeEnv.integer("DEYE_DATA_READ_INTERVAL", 60),
                 set_time_interval=DeyeEnv.integer("DEYE_SET_TIME_INTERVAL", 300),
+                set_time_timezone=DeyeEnv.string("TZ", "UTC"),
                 publish_on_change=DeyeEnv.boolean("DEYE_PUBLISH_ON_CHANGE", False),
                 event_expiry=DeyeEnv.integer("DEYE_PUBLISH_ON_CHANGE_MAX_INTERVAL", 360),
                 metric_groups=DeyeConfig.__read_item_set(DeyeEnv.string("DEYE_METRIC_GROUPS", "")),
