@@ -274,7 +274,7 @@ class DeyeConfig:
                 log_stream=DeyeEnv.string("LOG_STREAM", LOG_DEST_STDOUT),
                 data_read_inverval=DeyeEnv.integer("DEYE_DATA_READ_INTERVAL", 60),
                 set_time_interval=DeyeEnv.integer("DEYE_SET_TIME_INTERVAL", 300),
-                set_time_timezone=DeyeEnv.string("TZ", "UTC"),
+                set_time_timezone=DeyeEnv.string("DEYE_SET_TIME_TIMEZONE", "UTC"),
                 publish_on_change=DeyeEnv.boolean("DEYE_PUBLISH_ON_CHANGE", False),
                 event_expiry=DeyeEnv.integer("DEYE_PUBLISH_ON_CHANGE_MAX_INTERVAL", 360),
                 metric_groups=DeyeConfig.__read_item_set(DeyeEnv.string("DEYE_METRIC_GROUPS", "")),

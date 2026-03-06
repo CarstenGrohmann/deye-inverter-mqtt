@@ -30,7 +30,7 @@ class DeyeSetTimeProcessor(DeyeEventProcessor):
     Set logger time when the logger becomes available online.
     """
 
-    def __init__(self, logger_config: DeyeLoggerConfig, interval: int, sensors: [Sensor], modbus: DeyeModbus, timezone: str = "UTC"):
+    def __init__(self, logger_config: DeyeLoggerConfig, interval: int, timezone: str, sensors: [Sensor], modbus: DeyeModbus):
         self.__log = logger_config.logger_adapter(logging.getLogger(DeyeSetTimeProcessor.__name__))
         self.__interval = interval
         self.__modbus = modbus
@@ -56,12 +56,10 @@ class DeyeSetTimeProcessor(DeyeEventProcessor):
         logger_status = events.get_status()
         if logger_status is None:
             return
-        # Get current time in specified timezone, 
+        # Get current time in specified timezone,
         # ZoneInfo uses the "Europe/Berlin" style strings from your config
-        try: # for windows dev or run (does not have default zoneinfo db) need to install tzdata, like "uv add tzdata"
-            tz = ZoneInfo(self.__timezone)
-        except Exception:
-            tz = ZoneInfo("UTC")  # Fallback to UTC if timezone is not found
+        # for windows dev or run (does not have default zoneinfo db) need to install tzdata, like "uv add tzdata"
+        tz = ZoneInfo(self.__timezone)
         now = datetime.now(tz).replace(tzinfo=None)
         delta = now - self.__last_update_ts
         if delta.total_seconds() < self.__interval:
