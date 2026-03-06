@@ -35,7 +35,7 @@ class DeyeSetTimeProcessorTest(unittest.TestCase):
     def test_set_time__when_logger_is_becoming_online_and_no_datetime_sensors_defined(self, modbus):
         # given
         sensors = []
-        processor = DeyeSetTimeProcessor(self.config, 300, sensors, modbus)
+        processor = DeyeSetTimeProcessor(self.config, 300, "UTC", sensors, modbus)
 
         # when
         with patch.object(processor, "_DeyeSetTimeProcessor__log") as mock_log:
@@ -56,7 +56,7 @@ class DeyeSetTimeProcessorTest(unittest.TestCase):
     def test_keep_stored_status_set_to_offline__when_modbus_write_fails_and_no_datetime_sensors_defined(self, modbus):
         # given
         sensors = []
-        processor = DeyeSetTimeProcessor(self.config, 300, sensors, modbus)
+        processor = DeyeSetTimeProcessor(self.config, 300, "UTC", sensors, modbus)
 
         # and
         modbus.write_registers_uint.return_value = False
@@ -76,7 +76,7 @@ class DeyeSetTimeProcessorTest(unittest.TestCase):
     def test_set_time__when_logger_is_becoming_online_and_datetime_sensor_defined(self, modbus):
         # given
         sensors = [datetime_sensor_1]
-        processor = DeyeSetTimeProcessor(self.config, 300, sensors, modbus)
+        processor = DeyeSetTimeProcessor(self.config, 300, "UTC", sensors, modbus)
 
         # when
         processor.process(DeyeEventList([DeyeLoggerStatusEvent(True)]))
@@ -92,7 +92,7 @@ class DeyeSetTimeProcessorTest(unittest.TestCase):
     def test_keep_stored_status_set_to_offline__when_modbus_write_fails_and_datetime_sensor_defined(self, modbus):
         # given
         sensors = [datetime_sensor_1]
-        processor = DeyeSetTimeProcessor(self.config, 300, sensors, modbus)
+        processor = DeyeSetTimeProcessor(self.config, 300, "UTC", sensors, modbus)
 
         # and
         modbus.write_registers.return_value = False
@@ -113,7 +113,7 @@ class DeyeSetTimeProcessorTest(unittest.TestCase):
     def test_set_time__when_logger_is_becoming_online_and_multiple_datetime_sensors_defined(self, modbus):
         # given
         sensors = [datetime_sensor_1, datetime_sensor_2]
-        processor = DeyeSetTimeProcessor(self.config, 300, sensors, modbus)
+        processor = DeyeSetTimeProcessor(self.config, 300, "UTC", sensors, modbus)
 
         # when
         with patch.object(processor, "_DeyeSetTimeProcessor__log") as mock_log:
