@@ -30,7 +30,8 @@ class DeyeSetTimeProcessor(DeyeEventProcessor):
     Set logger time when the logger becomes available online.
     """
 
-    def __init__(self, logger_config: DeyeLoggerConfig, interval: int, timezone: str, sensors: [Sensor], modbus: DeyeModbus):
+    def __init__(self, logger_config: DeyeLoggerConfig, interval: int, timezone: str,
+        sensors: [Sensor], modbus: DeyeModbus):
         self.__log = logger_config.logger_adapter(logging.getLogger(DeyeSetTimeProcessor.__name__))
         self.__interval = interval
         self.__modbus = modbus
