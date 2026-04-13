@@ -99,7 +99,7 @@ class DeyeAtConnector(DeyeConnector):
             if not at_response or at_response.startswith(b"+ok=no data"):
                 return modbus_response
             if at_response.startswith(b"+ok="):
-                modbus_response = DeyeAtConnector.extract_modbus_respose(at_response)
+                modbus_response = DeyeAtConnector.extract_modbus_response(at_response)
                 self.__log.debug("Extracted Modbus response %s", modbus_response.hex())
 
             self.__deauthenticate(client_socket)
@@ -111,7 +111,7 @@ class DeyeAtConnector(DeyeConnector):
         return modbus_response
 
     @staticmethod
-    def extract_modbus_respose(at_cmd_response: bytes) -> bytes:
+    def extract_modbus_response(at_cmd_response: bytes) -> bytes:
         extracted_modus_response = at_cmd_response.replace(b"\x10", b"")[4:-4].decode("utf-8")
         if len(extracted_modus_response) > 4 and extracted_modus_response[-4:] == "0000":
             extracted_modus_response = extracted_modus_response[0:-4]
