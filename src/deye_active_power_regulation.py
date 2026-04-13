@@ -34,6 +34,7 @@ class DeyeActivePowerRegulationEventProcessor(DeyeEventProcessor):
         self.__mqtt_client = mqtt_client
         self.__modbus = modbus
         self.__active_power_regulation_topic_suffix = "settings/active_power_regulation"
+        self.__active_power_reg_sensor = None
         matching_sensors = [s for s in sensors if s.mqtt_topic_suffix == self.__active_power_regulation_topic_suffix]
         if len(matching_sensors) == 0:
             self.__log.info("Active power regulation sensor not found. Enable appropriate settings metric group.")
@@ -50,6 +51,12 @@ class DeyeActivePowerRegulationEventProcessor(DeyeEventProcessor):
         return "Active power regulation over MQTT"
 
     def initialize(self):
+        if not self.__active_power_reg_sensor:
+            self.__log.info(
+                "Active power regulation sensor not found. Enable appropriate settings metric group or check "
+                "the configuration."
+            )
+            return
         self.__mqtt_client.subscribe_command_handler(
             self.__logger_config.index, self.__active_power_regulation_topic_suffix, self.handle_command
         )
