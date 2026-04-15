@@ -17,49 +17,57 @@
 
 import math
 from datetime import datetime
-from abc import abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
 
-class Sensor:
+class Sensor(ABC):
     """
     Models solar inverter sensor.
 
     This is an abstract class. Method 'read_value' must be provided by the extending subclass.
     """
 
-    @abstractproperty
+    @property
     def reg_address(self) -> int:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def mqtt_topic_suffix(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def unit(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def print_format(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def groups(self) -> list[str]:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def data_type(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def scale_factor(self) -> float:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_readiness_check(self) -> bool:
         pass
 
