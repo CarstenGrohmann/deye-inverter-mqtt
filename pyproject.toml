@@ -13,6 +13,7 @@ dependencies = [
     "libscrc==1.8.1",
     "paho-mqtt==1.6.1",
     "python-dotenv>=1.2.1",
+    "tzdata>=2025.3",
 ]
 
 [dependency-groups]

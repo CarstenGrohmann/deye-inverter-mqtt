@@ -220,7 +220,7 @@ All configuration options are controlled through environment variables.
 * `MQTT_TLS_CLIENT_KEY_PATH` - Client private key location for TLS based authentication, defaults to `None`
 * `PLUGINS_DIR` - Path to a directory containing custom plugins extending the functionality of the service
 * `PLUGINS_ENABLED` - A list of plugin names that will be loaded when successfully discovered in `PLUGINS_DIR`, defaults to `[]`
-* `TZ` - Time zone (from the zoneinfo database)
+* `DEYE_SET_TIME_TIMEZONE` - Time zone (from the zoneinfo database), like Europe/Tallinn
 
 ## ➕ Additional features
 ### Additional MQTT topics
@@ -262,7 +262,7 @@ Additionally, you can enable multi-inverter data aggregation. Set `DEYE_FEATURE_
 Monitors current logger status and sets the time at the logger/inverter once the connection to it can be established and adjusts it periodically, every `DEYE_SET_TIME_INTERVAL` seconds.
 This is useful in a setup where the inverter has no access to the public internet, or is cut off from the Solarman cloud services. 
 This feature is disabled by default and must be activated by setting `DEYE_FEATURE_SET_TIME` in the config file.
-For inverters that store date&time in registers other than 22-24, a DateTimeSensor has to be defined in metric groups (metric group `deye_sg01hp3_systemtime` can be used as an example).
+For inverters that store date&time in registers other than 22-24, a DateTimeSensor has to be defined in metric groups (metric group `deye_sg01hp3_systemtime` can be used as an example). Defaults to UTC, can be customized by DEYE_SET_TIME_TIMEZONE variable, using zoneinfo format, like Europe/Tallinn.
 
 ### Reading inverter settings
 The service can optionally read inverter settings. This feature may be useful when you dynamically modify active power regulation factor. Enable it by adding `settings` or `settings_micro` metric group to `DEYE_METRIC_GROUPS` env variable.

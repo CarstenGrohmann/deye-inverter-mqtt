@@ -6,8 +6,15 @@
   {
     "label": "Main docker entrypoint",
     "adapter": "Debugpy",
-    "program": "src/deye_docker_entrypoint.py",
-    "cwd": "$ZED_WORKTREE_ROOT",
+    "program": "deye_docker_entrypoint.py",
+    "cwd": "$ZED_WORKTREE_ROOT/src",
+    "request": "launch",
+  },
+  {
+    "label": "Display Inverter Status",
+    "adapter": "Debugpy",
+    "program": "mqtt_display.py",
+    "cwd": "$ZED_WORKTREE_ROOT/src",
     "request": "launch",
   },
   {
