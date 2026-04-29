@@ -15,8 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import subprocess
 import unittest
-import os
 import time
 from datetime import datetime
 import paho.mqtt.client as paho
@@ -35,29 +35,28 @@ logging.basicConfig(stream=sys.stdout, format=log_format, level=logging.DEBUG)
 
 class DeyeMqttClientIntegrationTest(unittest.TestCase):
     mqtt_broker_port = 9883
-    mosquitto_pid = None
+    _broker_proc = None
 
     def __start_broker(self):
-        self.mosquitto_pid = os.spawnl(
-            os.P_NOWAIT, "/usr/sbin/mosquitto", "/usr/sbin/mosquitto", "-p", str(self.mqtt_broker_port)
+        self._broker_proc = subprocess.Popen(
+            ["/usr/sbin/mosquitto", "-p", str(self.mqtt_broker_port)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
         time.sleep(2)
 
     def __start_broker_with_tls(self):
-        self.mosquitto_pid = os.spawnl(
-            os.P_NOWAIT,
-            "/usr/sbin/mosquitto",
-            "/usr/sbin/mosquitto",
-            "-p",
-            str(self.mqtt_broker_port),
-            "-c",
-            "mosquitto/mosquitto-tls.conf",
+        self._broker_proc = subprocess.Popen(
+            ["/usr/sbin/mosquitto", "-p", str(self.mqtt_broker_port), "-c", "mosquitto/mosquitto-tls.conf"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
         time.sleep(2)
 
     def __stop_broker(self):
-        if self.mosquitto_pid:
-            os.kill(self.mosquitto_pid, 9)
+        if self._broker_proc:
+            self._broker_proc.kill()
+            self._broker_proc.wait()
         time.sleep(5)
 
     def __connect_test_client(self):
