@@ -208,6 +208,8 @@ class DeyeMqttClientIntegrationTest(unittest.TestCase):
         timestamp = datetime.now()
         observation = Observation(string_dc_power_sensor, timestamp, 1.2)
         mqtt.publish_observation(observation, 0)
+        # Wait for the "online" message to be processed by the test client.
+        time.sleep(2)
 
         # then
         self.assertEqual(len(self.received_messages), 1)
