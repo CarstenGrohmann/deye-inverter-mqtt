@@ -16,6 +16,7 @@
 # under the License.
 
 import subprocess
+import threading
 import unittest
 import time
 from datetime import datetime
@@ -68,6 +69,14 @@ class DeyeMqttClientIntegrationTest(unittest.TestCase):
         )
         self.test_mqtt_client.connect("localhost", port=self.mqtt_broker_port)
 
+    def __subscribe(self, topic: str):
+        # Wait for SUBACK before returning so the subscription is active before the first publish.
+        subscribed = threading.Event()
+        self.test_mqtt_client.on_subscribe = lambda client, userdata, mid, granted_qos: subscribed.set()
+        self.test_mqtt_client.loop_start()
+        self.test_mqtt_client.subscribe(topic)
+        subscribed.wait(timeout=10)
+
     def setUp(self):
         self.received_messages = []
         self.config = DeyeConfig(
@@ -115,10 +124,9 @@ class DeyeMqttClientIntegrationTest(unittest.TestCase):
         observation = Observation(string_dc_power_sensor, timestamp, 1.2)
 
         # and
-        self.test_mqtt_client.subscribe(f"deye/{string_dc_power_sensor.mqtt_topic_suffix}")
+        self.__subscribe(f"deye/{string_dc_power_sensor.mqtt_topic_suffix}")
 
         # when
-        self.test_mqtt_client.loop_start()
         mqtt.publish_observation(observation, 0)
         self.test_mqtt_client.loop_stop()
 
@@ -151,10 +159,9 @@ class DeyeMqttClientIntegrationTest(unittest.TestCase):
 
         # and
         self.__connect_test_client()
-        self.test_mqtt_client.subscribe(f"deye/{string_dc_power_sensor.mqtt_topic_suffix}")
+        self.__subscribe(f"deye/{string_dc_power_sensor.mqtt_topic_suffix}")
 
         # when
-        self.test_mqtt_client.loop_start()
         mqtt.publish_observation(observation, 0)
         self.test_mqtt_client.loop_stop()
 
@@ -175,8 +182,7 @@ class DeyeMqttClientIntegrationTest(unittest.TestCase):
 
         # and
         self.__connect_test_client()
-        self.test_mqtt_client.subscribe(f"deye/status")
-        self.test_mqtt_client.loop_start()
+        self.__subscribe("deye/status")
 
         # when: connect
         mqtt = DeyeMqttClient(self.config)
@@ -201,14 +207,13 @@ class DeyeMqttClientIntegrationTest(unittest.TestCase):
 
         # and: recreate a test client
         self.__connect_test_client()
-        self.test_mqtt_client.subscribe(f"deye/status")
-        self.test_mqtt_client.loop_start()
+        self.__subscribe("deye/status")
 
         # and: send an observation, so the client can reconnect
         timestamp = datetime.now()
         observation = Observation(string_dc_power_sensor, timestamp, 1.2)
         mqtt.publish_observation(observation, 0)
-        # Wait for the "online" message to be processed by the test client.
+        # Wait for "online" to be published and delivered after reconnect.
         time.sleep(2)
 
         # then
@@ -241,10 +246,9 @@ class DeyeMqttClientIntegrationTest(unittest.TestCase):
 
         # and
         self.__connect_test_client()
-        self.test_mqtt_client.subscribe(f"deye/{string_dc_power_sensor.mqtt_topic_suffix}")
+        self.__subscribe(f"deye/{string_dc_power_sensor.mqtt_topic_suffix}")
 
         # when
-        self.test_mqtt_client.loop_start()
         mqtt.publish_observation(observation, 0)
         self.test_mqtt_client.loop_stop()
 
@@ -273,10 +277,9 @@ class DeyeMqttClientIntegrationTest(unittest.TestCase):
         observation = Observation(string_dc_power_sensor, timestamp, 1.2)
 
         # and
-        self.test_mqtt_client.subscribe(f"deye/{string_dc_power_sensor.mqtt_topic_suffix}")
+        self.__subscribe(f"deye/{string_dc_power_sensor.mqtt_topic_suffix}")
 
         # when
-        self.test_mqtt_client.loop_start()
         mqtt.publish_observation(observation, 0)
         self.test_mqtt_client.loop_stop()
 
